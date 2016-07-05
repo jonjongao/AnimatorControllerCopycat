@@ -1,5 +1,5 @@
-# AnimatorCopycat
-# Copycat Workflow #
+# AnimatorCopycat for Unity #
+## Get Started ##
 - **Template**放入要作為模板的*Animator Controller*
 - 如果是首次使用此模板, 要點選**Start Edit**才能繼續下一步
 - **Target Model Root**放入欲置換目標的*Fbx根模型*
