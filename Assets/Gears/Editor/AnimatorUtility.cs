@@ -373,33 +373,114 @@ namespace Gears
 
         }
 
-        public static Dictionary<string, Dictionary<string, Motion>> GetAllAnimatorMotions(AnimatorController animator)
+        public static void GetAnimatorStateByKey(AnimatorController animator, string key)
         {
-            Dictionary<string, Dictionary<string, Motion>> motionsWithLayerKey = new Dictionary<string, Dictionary<string, Motion>>();
+            var value = key.Split('/');
+            Debug.Log("received key: " + key + " -> ");
+            foreach (var i in value)
+            {
+                Debug.Log(i);
+            }
+
+            //animator.layers.Where(a=>a.name==value[0]).
+        }
+
+        public static Dictionary<string, Dictionary<string, AnimatorCopycat.Task>> GetAllAnimatorMotions(AnimatorController animator)
+        {
+            Dictionary<string, Dictionary<string, AnimatorCopycat.Task>> motionsWithLayerKey = new Dictionary<string, Dictionary<string, AnimatorCopycat.Task>>();
 
             animator.layers.ToList().ForEach(l =>
             {
-                Dictionary<string, Motion> motions = new Dictionary<string, Motion>();
+                Dictionary<string, AnimatorCopycat.Task> motions = new Dictionary<string, AnimatorCopycat.Task>();
 
                 l.stateMachine.states.ToList().ForEach(s =>
                 {
                     if (s.state.motion.GetType() == typeof(BlendTree))
                     {
                         BlendTree blendtree = (BlendTree)s.state.motion;
-                        BlendTreeToMotion(blendtree).ToList().ForEach(a =>
+                        UnpackBlendTree(blendtree).ToList().ForEach(a =>
                         {
-                            motions.Add("[BlendTree]" + s.state.name + "/" + a.Key, a.Value);
+                            motions.Add(s.state.name + "/" + a.Key, new AnimatorCopycat.Task(a.Value));
                         });
+                        //BlendTreeToMotion(blendtree).ToList().ForEach(a =>
+                        //{
+                        //    motions.Add("[BlendTree]" + s.state.name + "/" + a.Key, a.Value);
+                        //});
                     }
                     else
                     {
-                        motions.Add(s.state.name, s.state.motion);
+                        motions.Add(s.state.name, new AnimatorCopycat.Task(s.state));
                     }
                 });
                 motionsWithLayerKey.Add(l.name, motions);
             });
 
             return motionsWithLayerKey;
+        }
+
+        public static void CloneBlendTree(BlendTree value, int index, Motion newMotion)
+        {
+            List<ChildMotion> cloneMotions = new List<ChildMotion>();
+            value.children.ToList().ForEach(i => cloneMotions.Add(i));
+
+            for (int i = value.children.Length - 1; i >= 0; i--) { value.RemoveChild(i); }
+
+            for (int i = 0; i < cloneMotions.Count; i++)
+            {
+                if (i == index)
+                {
+                    value.AddChild(newMotion);
+                }
+                else
+                {
+                    value.AddChild(cloneMotions[i].motion);
+                }
+            }
+
+            for (int i = 0; i < value.children.Length; i++)
+            {
+                value.children[i] = cloneMotions[i];
+            }
+        }
+
+        public static Dictionary<string, BlendTree> UnpackBlendTree(BlendTree value)
+        {
+            Dictionary<string, BlendTree> motions = new Dictionary<string, BlendTree>();
+            int duplicateKey = 0;
+            motions.Add(value.name, value);
+            for (int i = 0; i < value.children.Length; i++)
+            {
+                if (value.children[i].motion.GetType() == typeof(BlendTree))
+                {
+                    UnpackBlendTree((BlendTree)value.children[i].motion).ToList().ForEach(a =>
+                    {
+                        motions.Add(value.name + "/" + a.Key, a.Value);
+                    });
+                }
+                else
+                {
+                    try
+                    {
+                        motions.Add(value.name, value);
+                    }
+                    catch (System.ArgumentException)
+                    {
+                        motions.Add(value.name + " " + duplicateKey++, value);
+                    }
+                }
+            }
+            //value.children.ToList().ForEach(i =>
+            //{
+            //    if(i.motion.GetType()==typeof(BlendTree))
+            //    {
+            //        UnpackBlendTree((BlendTree)i.motion).ToList().ForEach(a =>
+            //        {
+            //            motions.Add(value.name + "/" + a.Key, a.Value);
+            //        });
+            //    }
+            //});
+
+            return motions;
         }
 
         public static Dictionary<string, Motion> BlendTreeToMotion(BlendTree value)
