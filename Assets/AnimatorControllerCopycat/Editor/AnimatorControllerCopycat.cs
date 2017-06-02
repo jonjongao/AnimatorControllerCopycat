@@ -115,7 +115,7 @@ namespace Gears
 
                 states.ToList().ForEach(layer =>
                 {
-                    layer.Value.ToList().ForEach(state =>
+                    layer.Value.OrderBy(o => o.Key.Length).ThenBy(t => t.Value.value.name).ToList().ForEach(state =>
                     {
                         GUILayout.BeginHorizontal();
 
@@ -148,8 +148,8 @@ namespace Gears
                         {
                             try
                             {
-                                var i = (UnityEditor.Animations.BlendTree)states[layer.Key][state.Key].value;
-                                var index = int.Parse(state.Key.Substring(state.Key.Length - 2, 2));
+                                var i = (BlendTree)states[layer.Key][state.Key].value;
+                                var index = int.Parse((state.Key.Substring(state.Key.Length - 3, 3)).Split('[', ']')[1]);
                                 var newMotion = EditorGUILayout.ObjectField(i.children[index].motion,
                                     typeof(Motion),
                                     false,
@@ -161,6 +161,10 @@ namespace Gears
                                 }
                             }
                             catch (System.FormatException)
+                            {
+                                GUILayout.Label("BlendTree", GUILayout.Width(maxMotionWidth * 13f));
+                            }
+                            catch (System.IndexOutOfRangeException)
                             {
                                 GUILayout.Label("BlendTree", GUILayout.Width(maxMotionWidth * 13f));
                             }

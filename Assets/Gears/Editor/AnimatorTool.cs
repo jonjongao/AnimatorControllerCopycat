@@ -69,11 +69,12 @@ namespace Gears
         {
             Dictionary<string, BlendTree> motions = new Dictionary<string, BlendTree>();
             int duplicateKey = 0;
-            motions.Add(value.name, value);
+            //motions.Add(value.name, value);
             for (int i = 0; i < value.children.Length; i++)
             {
                 if (value.children[i].motion.GetType() == typeof(BlendTree))
                 {
+                    motions.Add(value.name + "[" + i + "]", value);
                     MappingBlendTree((BlendTree)value.children[i].motion).ToList().ForEach(a =>
                     {
                         motions.Add(value.name + "/" + a.Key, a.Value);
@@ -83,7 +84,7 @@ namespace Gears
                 {
                     try
                     {
-                        motions.Add(value.name, value);
+                        motions.Add(value.name + "[" + i + "]", value);
                     }
                     catch (System.ArgumentException)
                     {
